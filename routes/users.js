@@ -6,18 +6,11 @@ const { checkBody } = require("../modules/checkbody");
 const { saveTrip } = require("../modules/saveTrip");
 const bcrypt = require("bcrypt");
 
-const TransportSlot = require("../database/models/transport/transportSlots");
-const ActivitySlots = require("../database/models/activities/activitySlots");
-const AccommodationRooms = require("../database/models/accommodation/accommodationRooms");
-
 router.post("/signup", (req, res) => {
-  //console
   if (!checkBody(req.body, ["email", "password", "firstName", "lastName"])) {
     res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
-
-  console.log("body is OK");
 
   User.findOne({ email: req.body.email }).then((data) => {
     if (data === null) {
@@ -42,7 +35,7 @@ router.post("/signup", (req, res) => {
         res.json({ result: true, token: newDoc.token });
       });
     } else {
-      // User already exists in database
+      // Utilisateur existe déjà
       res.json({ result: false, error: "User already exists" });
     }
   });
@@ -52,8 +45,6 @@ router.post("/signin", (req, res) => {
   if (!checkBody(req.body, ["email", "password"])) {
     return res.json({ result: false, error: "Missing or empty fields" });
   }
-
-  console.log("body is OK");
 
   User.findOne({ email: req.body.email }).then((data) => {
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
@@ -87,9 +78,56 @@ router.get("/:userToken/reservedTrips", (req, res) => {
 router.get("/:userToken/savedTrips", (req, res) => {
   const token = req.params.userToken;
   User.findOne({ token })
-    .populate("savedTrips") // need to deepen the populate (with object)
-    .then((data) => {
-      return res.json(data.savedTrips);
+    .populate({
+      path: "savedTrips",
+      populate: [
+        { path: "destination" },
+        {
+          path: "outboundJourney",
+          populate: [
+            {
+              path: "transportSlot",
+              populate: [
+                { path: "transportBase" },
+                { path: "departure", populate: "place" },
+                { path: "arrival", populate: "place" },
+              ],
+            },
+            { path: "transportExtras" },
+          ],
+        },
+        {
+          path: "inboundJourney",
+          populate: [
+            {
+              path: "transportSlot",
+              populate: [
+                { path: "transportBase" },
+                { path: "departure", populate: "place" },
+                { path: "arrival", populate: "place" },
+              ],
+            },
+            { path: "transportExtras" },
+          ],
+        },
+        {
+          path: "accommodation",
+          populate: [
+            { path: "accommodationRoom", populate: "accommodationBase" },
+            { path: "accommodationExtras" },
+          ],
+        },
+        {
+          path: "activities",
+          populate: [
+            { path: "activitySlot", populate: "activityBase" },
+            { path: "activityExtras" },
+          ],
+        },
+      ],
+    })
+    .then((user) => {
+      return res.json(user.savedTrips);
     });
 });
 

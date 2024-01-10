@@ -8,53 +8,14 @@ const findJourney = require("../modules/findJourney");
 const findAccommodation = require("../modules/findAccommodation");
 const findActivities = require("../modules/findActivities");
 
-const Trip = require("../database/models/trips");
 const ActivitySlots = require("../database/models/activities/activitySlots");
 const AccommodationRooms = require("../database/models/accommodation/accommodationRooms");
 const TransportSlot = require("../database/models/transport/transportSlots");
 const Destination = require("../database/models/destinations");
 let trips = [];
 
-// ROUTE GET POUR REGENERER ACCOMMODATION
-router.get(
-  "/newAccommodation/:Locationeparture/:depDate/:arrivDate/:duration/:budget/:people",
-  async (req, res) => {
-    const { LocationDeparture, depDate, arrivDate, duration, budget, people } =
-      req.params;
-
-    const newAccommodation = await findAccommodation(
-      LocationDeparture,
-      depDate,
-      arrivDate,
-      duration,
-      budget,
-      people
-    );
-
-    if (!newAccommodation) {
-      return res.status(404).json({
-        message: "Aucun nouvel hébergement trouvé pour le filtre specifié!",
-      });
-    }
-
-    const previousAccommodationPrice =
-      trips[selectedTripIndex].accommodation.accommodationSlot.price;
-    const newAccommodationPrice = newAccommodation.price;
-
-    if (newAccommodationPrice <= previousAccommodationPrice) {
-      trips[selectedTripIndex].accommodation = {
-        accommodationSlot: newAccommodation,
-        accommodationExtras: [],
-      };
-
-      const saveTripResponse = saveTrip(req);
-    }
-  }
-);
-
-// Get /newTransport
-
-router.get("/newTransport", async (req, res) => {});
+// REGENERER ACCOMMODATION
+router.post("/newAccommodation", async (req, res) => {});
 
 router.post("/generate", async (req, res) => {
   trips = [];
